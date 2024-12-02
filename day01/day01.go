@@ -89,6 +89,65 @@ func (d AocDay1) Puzzle1(useSample bool) {
 
 func (d AocDay1) Puzzle2(useSample bool) {
 
-	fmt.Printf("Running puzzle TWO - %v", useSample)
+	datafile := DIR + "data.txt"
+	if useSample {
+		datafile = DIR + "sample.txt"
+	}
+
+	f, err := os.Open(datafile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	var (
+		line                     string
+		num1, num2, score, total int
+	)
+
+	list1 := make([]int, 0)
+	list2 := make(map[int]int)
+
+	for scanner.Scan() {
+
+		line = scanner.Text()
+
+		rawNumbers := strings.Fields(line)
+		if len(rawNumbers) < 2 {
+			continue // Log ?
+		}
+
+		num1, err = strconv.Atoi(rawNumbers[0])
+		if err != nil {
+			continue // Log ?
+		} else {
+			list1 = append(list1, num1)
+		}
+
+		num2, err = strconv.Atoi(rawNumbers[1])
+		if err != nil {
+			continue // Log ?
+		} else {
+			list2[num2]++
+		}
+
+	}
+
+	for _, num1 = range list1 {
+
+		num2 = list2[num1]
+
+		score = num1 * num2
+		total += score
+
+		fmt.Printf("%d * %d | %d | %d\n", num1, num2, score, total)
+
+	}
+
+	fmt.Println("------")
+	fmt.Printf("TOTAL: %d\n", total)
 
 }
