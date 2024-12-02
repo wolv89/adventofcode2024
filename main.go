@@ -6,6 +6,7 @@ import (
 	"log"
 
 	"github.com/wolv89/adventofcode2024/day01"
+	"github.com/wolv89/adventofcode2024/day02"
 )
 
 var (
@@ -53,6 +54,8 @@ func main() {
 	switch flagday {
 	case 1:
 		day = day01.AocDay1{}
+	case 2:
+		day = day02.AocDay2{}
 	}
 
 	if flagpuzzle == 1 {
