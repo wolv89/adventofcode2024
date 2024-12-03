@@ -7,6 +7,7 @@ import (
 
 	"github.com/wolv89/adventofcode2024/day01"
 	"github.com/wolv89/adventofcode2024/day02"
+	"github.com/wolv89/adventofcode2024/day03"
 )
 
 var (
@@ -56,6 +57,8 @@ func main() {
 		day = day01.AocDay1{}
 	case 2:
 		day = day02.AocDay2{}
+	case 3:
+		day = day03.AocDay3{}
 	}
 
 	if flagpuzzle == 1 {
