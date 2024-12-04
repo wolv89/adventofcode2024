@@ -144,4 +144,55 @@ func (d AocDay4) Puzzle1(useSample bool) {
 
 func (d AocDay4) Puzzle2(useSample bool) {
 
+	datafile := DIR + "data.txt"
+	if useSample {
+		datafile = DIR + "sample.txt"
+	}
+
+	f, err := os.Open(datafile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	grid := make([]string, 0)
+
+	for scanner.Scan() {
+		grid = append(grid, scanner.Text())
+	}
+
+	h, w := len(grid), len(grid[0])
+	var i, j, total, up, dw, lf, rg int
+
+	for i = 1; i < h-1; i++ {
+		for j = 1; j < w-1; j++ {
+
+			if grid[i][j] != 'A' {
+				continue
+			}
+
+			// Up (x2), Down (x2), Left, Right (x2 ABAB Select Start...)
+			up, dw = i-1, i+1
+			lf, rg = j-1, j+1
+
+			// fmt.Println(string(grid[up][lf]), ".", string(grid[up][rg]))
+			// fmt.Println(".", string(grid[i][j]), ".")
+			// fmt.Println(string(grid[dw][lf]), ".", string(grid[dw][rg]))
+			// fmt.Println("")
+
+			if (grid[up][lf] == 'S' && grid[dw][rg] == 'M') || (grid[up][lf] == 'M' && grid[dw][rg] == 'S') {
+				if (grid[dw][lf] == 'S' && grid[up][rg] == 'M') || (grid[dw][lf] == 'M' && grid[up][rg] == 'S') {
+					total++
+				}
+			}
+
+		}
+	}
+
+	fmt.Println("Total: ", total)
+	fmt.Println("")
+
 }
