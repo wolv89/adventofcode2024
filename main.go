@@ -8,6 +8,7 @@ import (
 	"github.com/wolv89/adventofcode2024/day01"
 	"github.com/wolv89/adventofcode2024/day02"
 	"github.com/wolv89/adventofcode2024/day03"
+	"github.com/wolv89/adventofcode2024/day04"
 )
 
 var (
@@ -33,10 +34,10 @@ func init() {
 
 }
 
-func validateFlags() {
+func validateFlags(lim int) {
 
-	if flagday < 1 || flagday > 25 {
-		log.Fatalf("Please enter a day between 1 and 25")
+	if flagday < 1 || flagday > lim {
+		log.Fatalf("Please enter a day between 1 and %d", lim)
 	}
 
 	if flagpuzzle < 1 || flagpuzzle > 2 {
@@ -47,19 +48,17 @@ func validateFlags() {
 
 func main() {
 
-	flag.Parse()
-	validateFlags()
-
-	var day AocDay
-
-	switch flagday {
-	case 1:
-		day = day01.AocDay1{}
-	case 2:
-		day = day02.AocDay2{}
-	case 3:
-		day = day03.AocDay3{}
+	days := []AocDay{
+		day01.AocDay1{},
+		day02.AocDay2{},
+		day03.AocDay3{},
+		day04.AocDay4{},
 	}
+
+	flag.Parse()
+	validateFlags(len(days))
+
+	day := days[flagday-1]
 
 	if flagpuzzle == 1 {
 		day.Puzzle1(flagsample)
