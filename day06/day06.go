@@ -2,7 +2,6 @@ package day06
 
 import (
 	"bufio"
-	"container/ring"
 	"fmt"
 	"log"
 	"os"
@@ -120,9 +119,9 @@ func (d AocDay6) Puzzle2(useSample bool) {
 	scanner.Split(bufio.ScanLines)
 
 	var (
-		line                           string
-		x, y, dir, h, w, turns, px, py int
-		found                          bool
+		line                       string
+		x, y, dir, h, w, turn, rev int
+		found                      bool
 	)
 
 	grid := make([][]byte, 0)
@@ -162,26 +161,19 @@ func (d AocDay6) Puzzle2(useSample bool) {
 	h, w = len(grid), len(grid[0])
 	next := Point{guard.x, guard.y}
 
-	trail := make([][]byte, h)
+	trail := make([][][4]bool, h)
 	for t := range trail {
-		trail[t] = make([]byte, w)
+		trail[t] = make([][4]bool, w)
 	}
 
-	fmt.Println(guard)
-	fmt.Println("")
+	// Starting point is an UP
+	trail[guard.x][guard.y][0] = true
 
-	const cn = 3
-	corners := ring.New(cn)
-
-	poss := Point{-1, -1}
-
-	tr := Point{guard.x, guard.y}
-	for {
-		tr.x++
-		if tr.x >= h {
+	for rev = guard.x + 1; rev < h; rev++ {
+		if grid[rev][guard.y] == '#' {
 			break
 		}
-		trail[tr.x][tr.y] = '^'
+		trail[rev][guard.y][0] = true
 	}
 
 patrol:
@@ -195,47 +187,76 @@ patrol:
 		}
 
 		if grid[next.x][next.y] == '#' {
+
 			next.x, next.y = guard.x, guard.y
 			dir = (dir + 1) % 4
 
-			corners.Value = Point{guard.x, guard.y}
-			corners = corners.Next()
+			// Every time we turn, we want to walk the trail
+			// BACKWARDS until we hit bounds, or a #
+			// There's probably a nicer way to do this rather than a
+			// big ol' if/else block but it's very hot here and I'm
+			// getting a bit sick of this puzzle.... :/
 
-			if turns < 2 {
-				turns++
-			} else {
-
-				px, py = 0, 0
-
-				corners.Do(func(cnr any) {
-					px ^= cnr.(Point).x
-					py ^= cnr.(Point).y
-				})
-
-				poss.x, poss.y = px, py
-
-				fmt.Println("> ", poss)
+			// Turned UP so walk down
+			if dir == 0 {
+				for rev = guard.x + 1; rev < h; rev++ {
+					if grid[rev][guard.y] == '#' {
+						break
+					}
+					trail[rev][guard.y][0] = true
+				}
+				// Turned RIGHT so walk left
+			} else if dir == 1 {
+				for rev = guard.y - 1; rev >= 0; rev-- {
+					if grid[guard.x][rev] == '#' {
+						break
+					}
+					trail[guard.x][rev][1] = true
+				}
+				// Turned DOWN so walk up
+			} else if dir == 2 {
+				for rev = guard.x - 1; rev >= 0; rev-- {
+					if grid[rev][guard.y] == '#' {
+						break
+					}
+					trail[rev][guard.y][2] = true
+				}
+				// Turned LEFT so walk right
+			} else if dir == 3 {
+				for rev = guard.y + 1; rev < w; rev++ {
+					if grid[guard.x][rev] == '#' {
+						break
+					}
+					trail[guard.x][rev][3] = true
+				}
 			}
 
 		} else {
 			if grid[next.x][next.y] == '.' {
 				spaces++
 			}
+
+			// Move
 			guard.x, guard.y = next.x, next.y
 
-			if guard.x == poss.x && guard.y == poss.y {
+			// Check
+			turn = (dir + 1) % 4
+			if trail[guard.x][guard.y][turn] {
 
-				next.x = guard.x + dirs[dir][0]
-				next.y = guard.y + dirs[dir][1]
+				next.x += dirs[dir][0]
+				next.y += dirs[dir][1]
 
-				if next.x >= 0 || next.x < h || next.y >= 0 || next.y < w && grid[next.x][next.y] == '.' {
-					grid[next.x][next.y] = 'O'
+				if next.x >= 0 && next.x < h && next.y >= 0 && next.y < w && grid[next.x][next.y] != '#' {
 					obstacles++
+					grid[next.x][next.y] = 'O'
 				}
 
 				next.x, next.y = guard.x, guard.y
 
 			}
+
+			// Mark
+			trail[guard.x][guard.y][dir] = true
 
 		}
 
@@ -244,23 +265,7 @@ patrol:
 	fmt.Println("")
 
 	for _, row := range grid {
-		for _, cell := range row {
-			fmt.Printf("%s ", string(cell))
-		}
-		fmt.Println("")
-	}
-
-	fmt.Println("----------")
-
-	for _, row := range trail {
-		for _, cell := range row {
-			if cell != 0 {
-				fmt.Printf("%s ", string(cell))
-			} else {
-				fmt.Printf(". ")
-			}
-		}
-		fmt.Println("")
+		fmt.Println(string(row))
 	}
 
 	fmt.Println("")
