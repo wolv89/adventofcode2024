@@ -35,11 +35,11 @@ func (d AocDay7) Puzzle1(useSample bool) {
 	scanner.Split(bufio.ScanLines)
 
 	var (
-		parts                   []string
-		nums                    []int64
-		line                    string
-		target, num, sum, total int64
-		p, lim                  int
+		parts              []string
+		nums               []int64
+		line               string
+		target, num, total int64
+		p, lim             int
 	)
 
 outer:
@@ -72,12 +72,9 @@ outer:
 
 		}
 
-		sum = Calc(nums, nums[0], target, 1)
-
-		if sum == target {
-			// fmt.Println("")
-			fmt.Println(lim, " | VALID - ", sum)
-			total += sum
+		if Calc(nums, nums[0], target, 1) {
+			fmt.Println(lim, " | VALID - ", target)
+			total += target
 		} else {
 			fmt.Println(lim, " | Invalid - ", target)
 		}
@@ -100,37 +97,23 @@ outer:
 
 }
 
-func Calc(nums []int64, sum, target int64, n int) int64 {
+/*
+ * CREDIT: atrocia6
+ * https://www.reddit.com/r/adventofcode/comments/1h8l3z5/comment/m12bjeb/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+ *
+ * My original solution was a bit over-engineered, worked on the test data but not on the full
+ * Seems my answer was very close (~1.3 trillion!) but too complex to debug :(
+ * Adapted from Atrocia's elegant Python solution
+ */
+func Calc(nums []int64, sum, target int64, n int) bool {
 
-	if n >= len(nums) {
-		return sum
+	if n == len(nums) && sum == target {
+		return true
+	} else if sum > target || n == len(nums) {
+		return false
 	}
 
-	s := sum
-
-	// fmt.Println(n, " | ", sum, " | Multiply ", nums[n])
-
-	sum *= nums[n]
-	if sum == target {
-		return sum
-	} else if sum < target {
-		sum = Calc(nums, sum, target, n+1)
-		if sum == target {
-			return sum
-		}
-	}
-
-	sum = s
-	// fmt.Println(n, " | ", sum, " | Add ", nums[n])
-
-	sum += nums[n]
-	if sum == target {
-		return sum
-	} else if sum > target {
-		return s
-	}
-
-	return Calc(nums, sum, target, n+1)
+	return Calc(nums, sum*nums[n], target, n+1) || Calc(nums, sum+nums[n], target, n+1)
 
 }
 
