@@ -120,14 +120,12 @@ func (d AocDay6) Puzzle2(useSample bool) {
 
 	var (
 		line                       string
-		x, y, dir, h, w, turn, rev int
+		x, y, dir, h, w, obstacles int
 		found                      bool
 	)
 
 	grid := make([][]byte, 0)
 	guard := Point{0, 0}
-	spaces := 1
-	obstacles := 0
 
 	// Up, Right, Down, Left
 	var dirs = [4][2]int{
@@ -159,31 +157,20 @@ func (d AocDay6) Puzzle2(useSample bool) {
 	}
 
 	h, w = len(grid), len(grid[0])
-	next := Point{guard.x, guard.y}
+	next, start := Point{guard.x, guard.y}, Point{guard.x, guard.y}
 
-	trail := make([][][4]bool, h)
-	for t := range trail {
-		trail[t] = make([][4]bool, w)
+	checked := make([][]bool, h)
+	for ch := range checked {
+		checked[ch] = make([]bool, w)
 	}
 
-	// Starting point is an UP
-	trail[guard.x][guard.y][0] = true
-
-	for rev = guard.x + 1; rev < h; rev++ {
-		if grid[rev][guard.y] == '#' {
-			break
-		}
-		trail[rev][guard.y][0] = true
-	}
-
-patrol:
 	for {
 
 		next.x += dirs[dir][0]
 		next.y += dirs[dir][1]
 
 		if next.x < 0 || next.x >= h || next.y < 0 || next.y >= w {
-			break patrol
+			break
 		}
 
 		if grid[next.x][next.y] == '#' {
@@ -191,84 +178,72 @@ patrol:
 			next.x, next.y = guard.x, guard.y
 			dir = (dir + 1) % 4
 
-			// Every time we turn, we want to walk the trail
-			// BACKWARDS until we hit bounds, or a #
-			// There's probably a nicer way to do this rather than a
-			// big ol' if/else block but it's very hot here and I'm
-			// getting a bit sick of this puzzle.... :/
-
-			// Turned UP so walk down
-			if dir == 0 {
-				for rev = guard.x + 1; rev < h; rev++ {
-					if grid[rev][guard.y] == '#' {
-						break
-					}
-					trail[rev][guard.y][0] = true
-				}
-				// Turned RIGHT so walk left
-			} else if dir == 1 {
-				for rev = guard.y - 1; rev >= 0; rev-- {
-					if grid[guard.x][rev] == '#' {
-						break
-					}
-					trail[guard.x][rev][1] = true
-				}
-				// Turned DOWN so walk up
-			} else if dir == 2 {
-				for rev = guard.x - 1; rev >= 0; rev-- {
-					if grid[rev][guard.y] == '#' {
-						break
-					}
-					trail[rev][guard.y][2] = true
-				}
-				// Turned LEFT so walk right
-			} else if dir == 3 {
-				for rev = guard.y + 1; rev < w; rev++ {
-					if grid[guard.x][rev] == '#' {
-						break
-					}
-					trail[guard.x][rev][3] = true
-				}
-			}
-
 		} else {
-			if grid[next.x][next.y] == '.' {
-				spaces++
-			}
 
-			// Move
 			guard.x, guard.y = next.x, next.y
 
-			// Check
-			turn = (dir + 1) % 4
-			if trail[guard.x][guard.y][turn] {
+			if !checked[guard.x][guard.y] && (guard.x != start.x || guard.y != start.y) {
 
-				next.x += dirs[dir][0]
-				next.y += dirs[dir][1]
+				grid[guard.x][guard.y] = '#'
 
-				if next.x >= 0 && next.x < h && next.y >= 0 && next.y < w && grid[next.x][next.y] != '#' {
+				if PatrolLoops(grid, start) {
 					obstacles++
-					grid[next.x][next.y] = 'O'
 				}
 
-				next.x, next.y = guard.x, guard.y
+				grid[guard.x][guard.y] = '.'
+				checked[guard.x][guard.y] = true
 
 			}
-
-			// Mark
-			trail[guard.x][guard.y][dir] = true
 
 		}
 
 	}
 
 	fmt.Println("")
+	fmt.Println("Obstacles: ", obstacles)
 
-	for _, row := range grid {
-		fmt.Println(string(row))
+}
+
+func PatrolLoops(grid [][]byte, guard Point) bool {
+
+	h, w := len(grid), len(grid[0])
+	next := Point{guard.x, guard.y}
+
+	hist := make([][][4]bool, h)
+	for hi := range hist {
+		hist[hi] = make([][4]bool, w)
 	}
 
-	fmt.Println("")
-	fmt.Println("Obstacles: ", obstacles)
+	// Up, Right, Down, Left
+	var dirs = [4][2]int{
+		{-1, 0},
+		{0, 1},
+		{1, 0},
+		{0, -1},
+	}
+	dir := 0
+
+	for {
+
+		next.x += dirs[dir][0]
+		next.y += dirs[dir][1]
+
+		// Leaving bounds, does not loop
+		if next.x < 0 || next.x >= h || next.y < 0 || next.y >= w {
+			return false
+		} else if hist[next.x][next.y][dir] {
+			return true
+		}
+
+		if grid[next.x][next.y] == '#' {
+			next.x, next.y = guard.x, guard.y
+			dir = (dir + 1) % 4
+			hist[guard.x][guard.y][dir] = true
+		} else {
+			guard.x, guard.y = next.x, next.y
+			hist[guard.x][guard.y][dir] = true
+		}
+
+	}
 
 }
