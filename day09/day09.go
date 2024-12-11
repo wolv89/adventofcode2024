@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"os"
-	"strings"
 )
 
 type AocDay9 struct{}
@@ -125,20 +124,15 @@ func (d AocDay9) Puzzle1(useSample bool) {
 
 }
 
-// FS for File System ... yup
-type FsFile struct {
-	id, size int16
+type Item struct {
+	id, size    int16
+	file, moved bool
 }
 
-type FsSpace struct {
-	size int16
-}
-
-type SpaceRef struct {
-	id, size int16
-	elm      *list.Element
-}
-
+/*
+ * NOT WORKING :/
+ * Close, but not close enough...
+ */
 func (d AocDay9) Puzzle2(useSample bool) {
 
 	datafile := DIR + "data.txt"
@@ -153,21 +147,14 @@ func (d AocDay9) Puzzle2(useSample bool) {
 	defer f.Close()
 
 	var (
-		buf                     []byte
-		checksum                int64
-		n, i, s, b              int
-		id, num                 int16
-		space                   bool
-		newFile, fsf            FsFile
-		fileElm, spaceElm       *list.Element
-		newSpace, oldSpace, fsp FsSpace
-		spRef                   SpaceRef
+		buf        []byte
+		checksum   int64
+		n, i, s, b int
+		id, num    int16
+		isSpace    bool
 	)
 
 	seq := list.New()
-
-	files := make([]*list.Element, 0)
-	spaces := make([]SpaceRef, 0)
 
 	for {
 
@@ -188,117 +175,118 @@ func (d AocDay9) Puzzle2(useSample bool) {
 
 			num = int16(buf[i] - '0')
 
-			if !space {
+			if !isSpace {
 
-				newFile = FsFile{
+				seq.PushBack(Item{
 					id,
 					num,
-				}
-				fileElm = seq.PushBack(newFile)
-				files = append(files, fileElm)
+					true, // File
+					false,
+				})
 				id++
 
 			} else if num > 0 {
 
-				newSpace = FsSpace{
-					num,
-				}
-				spaceElm = seq.PushBack(newSpace)
-				spRef = SpaceRef{
+				seq.PushBack(Item{
 					id,
 					num,
-					spaceElm,
-				}
-				spaces = append(spaces, spRef)
+					false, // Space
+					false,
+				})
 
 			}
 
-			space = !space
+			isSpace = !isSpace
 
 		}
 
 	}
 
-	var bfore strings.Builder
+	var (
+		item, space Item
+		it, sp, nsp *list.Element
+		// b4, aft     strings.Builder
+	)
 
-	for e := seq.Front(); e != nil; e = e.Next() {
+	/*
+		for it = seq.Front(); it != nil; it = it.Next() {
 
-		switch e.Value.(type) {
-		case FsFile:
-			fsf = e.Value.(FsFile)
-			bfore.WriteString(fmt.Sprintf("{%d x%d}", fsf.id, fsf.size))
-		case FsSpace:
-			fsp = e.Value.(FsSpace)
-			bfore.WriteString(strings.Repeat(".", int(fsp.size)))
+			item = it.Value.(Item)
+
+			if item.file {
+				b4.WriteString(fmt.Sprintf("{%d x%d}", item.id, item.size))
+			} else {
+				b4.WriteString(strings.Repeat(".", int(item.size)))
+			}
+
 		}
 
-	}
+		fmt.Println(b4.String())
+		fmt.Println("")
+	*/
 
-	fmt.Println(bfore.String())
-	fmt.Println("")
-	fmt.Println("------------")
-	fmt.Println("")
+	for it = seq.Back(); it != nil; it = it.Prev() {
 
-	n = len(files) - 1
+		item = it.Value.(Item)
 
-	for i = n; i > 0; i-- {
+		if item.moved || !item.file {
+			continue
+		}
 
-		fileElm = files[i]
+		for sp = seq.Front(); sp != nil; sp = sp.Next() {
 
-		for s = 0; s < i; s++ {
+			space = sp.Value.(Item)
 
-			if spaces[s].id >= fileElm.Value.(FsFile).id {
+			if space.file || space.size < item.size {
+				continue
+			}
+
+			if space.id >= item.id {
 				break
 			}
 
-			if spaces[s].size >= fileElm.Value.(FsFile).size {
+			nsp = seq.InsertAfter(Item{
+				item.id,
+				item.size,
+				false,
+				false,
+			}, it)
 
-				// Create a new "space" where the file is
-				newSpace = FsSpace{
-					fileElm.Value.(FsFile).size,
-				}
-				seq.InsertAfter(newSpace, fileElm)
+			seq.MoveBefore(it, sp)
 
-				// Move the file to lowest free space (that's big enough)
-				seq.MoveBefore(fileElm, spaces[s].elm)
+			space.size -= item.size
+			sp.Value = space
 
-				// Decrease size in slice
-				spaces[s].size -= fileElm.Value.(FsFile).size
+			item.moved = true
+			it.Value = item
 
-				// Decrease size in actual list node
-				oldSpace = spaces[s].elm.Value.(FsSpace)
-				oldSpace.size -= fileElm.Value.(FsFile).size
-				spaces[s].elm.Value = oldSpace
-
-				break
-
-			}
+			// Reset pointer to continue loop
+			it = nsp
+			break
 
 		}
 
 	}
 
-	var bout strings.Builder
+	for it = seq.Front(); it != nil; it = it.Next() {
 
-	for e := seq.Front(); e != nil; e = e.Next() {
+		item = it.Value.(Item)
 
-		switch e.Value.(type) {
-		case FsFile:
-			fsf = e.Value.(FsFile)
-			for s = 0; s < int(fsf.size); s++ {
-				checksum += int64(b * int(fsf.id))
+		if item.file {
+			for s = 0; s < int(item.size); s++ {
+				checksum += int64(b * int(item.id))
 				b++
 			}
-			bout.WriteString(fmt.Sprintf("{%d x%d}", fsf.id, fsf.size))
-		case FsSpace:
-			fsp = e.Value.(FsSpace)
-			b += int(fsp.size)
-			bout.WriteString(strings.Repeat(".", int(fsp.size)))
+			// aft.WriteString(fmt.Sprintf("{%d x%d}", item.id, item.size))
+		} else {
+			b += int(item.size)
+			// aft.WriteString(strings.Repeat(".", int(item.size)))
 		}
 
 	}
 
-	fmt.Println(bout.String())
+	// fmt.Println(aft.String())
+	// fmt.Println("")
 
 	fmt.Println("")
 	fmt.Println("Checksum: ", checksum)
