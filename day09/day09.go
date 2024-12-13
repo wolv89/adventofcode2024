@@ -17,10 +17,10 @@ type FileBlock struct {
 const DIR = "day09/"
 const READ = 512
 
-func (d AocDay9) Puzzle1(useSample bool) {
+func (d AocDay9) Puzzle1(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
@@ -83,7 +83,7 @@ func (d AocDay9) Puzzle1(useSample bool) {
 	n = len(seq)
 	j = n - 1
 
-	if useSample {
+	if useSample == 1 {
 		RenderSeq(seq)
 	}
 
@@ -103,7 +103,7 @@ func (d AocDay9) Puzzle1(useSample bool) {
 
 		seq[i], seq[j] = seq[j], seq[i]
 
-		if useSample {
+		if useSample == 1 {
 			RenderSeq(seq)
 		}
 
@@ -133,10 +133,10 @@ type Item struct {
  * NOT WORKING :/
  * Close, but not close enough...
  */
-func (d AocDay9) Puzzle2(useSample bool) {
+func (d AocDay9) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 

@@ -19,13 +19,12 @@ import (
 )
 
 var (
-	flagday, flagpuzzle int
-	flagsample          bool
+	flagday, flagpuzzle, flagsample int
 )
 
 type AocDay interface {
-	Puzzle1(bool)
-	Puzzle2(bool)
+	Puzzle1(int)
+	Puzzle2(int)
 }
 
 func init() {
@@ -36,8 +35,8 @@ func init() {
 	flag.IntVar(&flagpuzzle, "puzzle", 1, "Which puzzle to run on the given day (1 or 2, defaults to 1)")
 	flag.IntVar(&flagpuzzle, "p", 1, "Which puzzle to run on the given day (1 or 2, defaults to 1)")
 
-	flag.BoolVar(&flagsample, "sample", false, "Use sample data, instead of full data? (Defaults to false)")
-	flag.BoolVar(&flagsample, "s", false, "Use sample data, instead of full data? (Defaults to false)")
+	flag.IntVar(&flagsample, "sample", 0, "Use sample data, instead of full data? (Defaults to false)")
+	flag.IntVar(&flagsample, "s", 0, "Use sample data, instead of full data? (Defaults to false)")
 
 }
 

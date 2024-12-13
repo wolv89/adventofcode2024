@@ -11,10 +11,10 @@ type AocDay4 struct{}
 
 const DIR = "day04/"
 
-func (d AocDay4) Puzzle1(useSample bool) {
+func (d AocDay4) Puzzle1(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
@@ -142,10 +142,10 @@ func (d AocDay4) Puzzle1(useSample bool) {
 
 }
 
-func (d AocDay4) Puzzle2(useSample bool) {
+func (d AocDay4) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 

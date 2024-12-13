@@ -17,10 +17,10 @@ type Point struct {
 	x, y int
 }
 
-func (d AocDay8) Puzzle1(useSample bool) {
+func (d AocDay8) Puzzle1(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
@@ -129,10 +129,10 @@ func (d AocDay8) Puzzle1(useSample bool) {
 
 }
 
-func (d AocDay8) Puzzle2(useSample bool) {
+func (d AocDay8) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 

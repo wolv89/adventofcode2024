@@ -13,10 +13,10 @@ type AocDay7 struct{}
 
 const DIR = "day07/"
 
-func (d AocDay7) Puzzle1(useSample bool) {
+func (d AocDay7) Puzzle1(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
@@ -98,10 +98,10 @@ func Calc(nums []int64, sum, target int64, n int) bool {
 
 }
 
-func (d AocDay7) Puzzle2(useSample bool) {
+func (d AocDay7) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 

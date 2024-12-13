@@ -14,10 +14,10 @@ type AocDay5 struct{}
 
 const DIR = "day05/"
 
-func (d AocDay5) Puzzle1(useSample bool) {
+func (d AocDay5) Puzzle1(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
@@ -124,10 +124,10 @@ type PageRules struct {
 	page  uint8
 }
 
-func (d AocDay5) Puzzle2(useSample bool) {
+func (d AocDay5) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
-	if useSample {
+	if useSample == 1 {
 		datafile = DIR + "sample.txt"
 	}
 
