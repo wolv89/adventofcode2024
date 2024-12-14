@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"sync"
 )
 
 type AocDay11 struct{}
@@ -115,11 +114,18 @@ func countDigits(num int64) int {
 
 }
 
-type Counter struct {
-	count int64
-	mu    sync.RWMutex
+type StoneKey struct {
+	stone int64
+	depth int
 }
 
+/*
+ * CREDIT: tlareg
+ * https://www.reddit.com/r/adventofcode/comments/1hbm0al/comment/m1xsgsa/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
+ *
+ * Thought Goroutines might just do the magic for me, but they didn't really help at all!
+ * This one is a bit hefty to brute force. Adapted from a caching/recursive solution by tlareg
+ */
 func (d AocDay11) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"
@@ -145,10 +151,8 @@ func (d AocDay11) Puzzle2(useSample int) {
 	stones := make([]int64, 0, len(start))
 
 	var (
-		st    string
-		stone int64
-		cnt   Counter
-		wg    sync.WaitGroup
+		st           string
+		stone, total int64
 	)
 
 	for _, st = range start {
@@ -166,80 +170,49 @@ func (d AocDay11) Puzzle2(useSample int) {
 	fmt.Println(stones)
 	fmt.Println("---")
 
-	// Should probably make this a CLI flag...
-	const BLINKS = 45
+	const BLINKS = 75
 
-	wg.Add(1)
+	cache := make(map[StoneKey]int64)
 
-	go func() {
-		defer wg.Done()
-		countStones(stones, 0, BLINKS, &cnt)
-	}()
+	for _, stone = range stones {
+		total += countStones(stone, BLINKS, &cache)
+	}
 
-	wg.Wait()
-
-	fmt.Println("")
-	fmt.Println("Count: ", cnt.count)
+	fmt.Println("Total: ", total)
 
 }
 
-func countStones(stones []int64, blink, BLINKS int, cnt *Counter) {
+func countStones(stone int64, depth int, cache *map[StoneKey]int64) int64 {
 
-	next := make([]int64, 0, len(stones))
-
-	// fmt.Println(stones, " | ", blink, "/", BLINKS)
-
-	for _, stone := range stones {
-
-		if stone == 0 {
-			next = append(next, 1)
-			continue
-		}
-
-		dg := countDigits(stone)
-
-		if dg%2 == 0 {
-			mp := int64(math.Pow10(dg / 2))
-			next = append(next, stone/mp)
-			next = append(next, stone%mp)
-			continue
-		}
-
-		next = append(next, stone*2024)
-
+	if depth == 0 {
+		return 1
 	}
 
-	blink++
-
-	if blink == BLINKS {
-
-		cnt.mu.Lock()
-		cnt.count += int64(len(next))
-		cnt.mu.Unlock()
-
-		return
-
+	key := StoneKey{
+		stone,
+		depth,
 	}
 
-	if len(next) <= 10 {
-		countStones(next, blink, BLINKS, cnt)
-	} else {
-		mid := len(next) / 2
-
-		var wg sync.WaitGroup
-		wg.Add(2)
-
-		go func() {
-			defer wg.Done()
-			countStones(next[:mid], blink, BLINKS, cnt)
-		}()
-
-		go func() {
-			defer wg.Done()
-			countStones(next[mid:], blink, BLINKS, cnt)
-		}()
-
-		wg.Wait()
+	if _, ok := (*cache)[key]; ok {
+		return (*cache)[key]
 	}
+
+	save := func(res int64) int64 {
+		(*cache)[key] = res
+		return res
+	}
+
+	if stone == 0 {
+		return save(countStones(1, depth-1, cache))
+	}
+
+	dg := countDigits(stone)
+
+	if dg%2 == 0 {
+		mp := int64(math.Pow10(dg / 2))
+		return save(countStones(stone/mp, depth-1, cache) + countStones(stone%mp, depth-1, cache))
+	}
+
+	return save(countStones(stone*2024, depth-1, cache))
 
 }
