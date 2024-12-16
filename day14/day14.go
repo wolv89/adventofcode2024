@@ -2,11 +2,14 @@ package day14
 
 import (
 	"bufio"
+	"container/ring"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
 )
 
 type AocDay14 struct{}
@@ -18,7 +21,14 @@ type Robot struct {
 	velx, vely int
 }
 
+type Factory struct {
+	robots []Robot
+	buf    *ring.Ring
+	w, h   int
+}
+
 const SECONDS = 100
+const TRAIL = 3
 
 func (d AocDay14) Puzzle1(useSample int) {
 
@@ -193,6 +203,117 @@ func (rob *Robot) Walk(w, h int) {
 
 }
 
-func (d AocDay14) Puzzle2(useSample int) {
+// Same but can pass number of seconds as 3rd param
+func (rob *Robot) WalkS(w, h, s int) {
+
+	newx := (rob.posx + rob.velx*s) % w
+	newy := (rob.posy + rob.vely*s) % h
+
+	if newx < 0 {
+		newx += w
+	}
+	if newy < 0 {
+		newy += h
+	}
+
+	rob.posx = newx
+	rob.posy = newy
+
+}
+
+// Hijacking the "sample" flag to be a seconds offset
+func (d AocDay14) Puzzle2(start int) {
+
+	// datafile := DIR + "sample.txt"
+	// w, h := 11, 7
+
+	datafile := DIR + "data.txt"
+	w, h := 101, 103
+
+	f, err := os.Open(datafile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	var (
+		rob  Robot
+		line string
+		y    int
+	)
+
+	seq := ring.New(TRAIL)
+
+	for s := 0; s < TRAIL; s++ {
+
+		grid := make([][]uint8, h)
+		for y = range grid {
+			grid[y] = make([]uint8, w)
+		}
+
+		seq.Value = grid
+		seq = seq.Next()
+
+	}
+
+	factory := Factory{
+		make([]Robot, 0),
+		seq,
+		w,
+		h,
+	}
+
+	// Read in robots, and set their start pos
+	for scanner.Scan() {
+
+		line = scanner.Text()
+
+		rob = AssembleRobot(line)
+
+		if start > 0 {
+			rob.WalkS(w, h, start)
+		}
+
+		seq.Value.([][]uint8)[rob.posy][rob.posx]++
+
+		factory.robots = append(factory.robots, rob)
+
+	}
+
+	p := tea.NewProgram(model{
+		sub:     make(chan struct{}),
+		secs:    start,
+		w:       w,
+		h:       h,
+		data:    seq,
+		factory: &factory,
+	})
+
+	if _, err = p.Run(); err != nil {
+		fmt.Println("Quitting...")
+		os.Exit(1)
+	}
+
+}
+
+func (f *Factory) Run() {
+
+	f.buf = f.buf.Next()
+
+	var r int
+
+	// clear(f.buf.Value.([][]uint8))
+
+	for r = range f.buf.Value.([][]uint8) {
+		clear(f.buf.Value.([][]uint8)[r])
+	}
+
+	for r := range f.robots {
+		f.robots[r].WalkS(f.w, f.h, 1)
+		f.buf.Value.([][]uint8)[f.robots[r].posy][f.robots[r].posx]++
+	}
 
 }
