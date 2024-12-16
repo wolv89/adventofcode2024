@@ -23,6 +23,8 @@ func (d AocDay13) Puzzle1(useSample int) {
 	datafile := DIR + "data.txt"
 	if useSample == 1 {
 		datafile = DIR + "sample.txt"
+	} else if useSample == 2 {
+		datafile = DIR + "sample2.txt"
 	}
 
 	f, err := os.Open(datafile)
@@ -73,6 +75,7 @@ func (d AocDay13) Puzzle1(useSample int) {
 		}
 
 		if ready {
+			// fmt.Println("Btn A: {", BA.x, ",", BA.y, "} | Btn B: {", BB.x, ",", BB.y, "} | Prz {", PR.x, ",", PR.y, "}")
 			a, b = Calculate(BA, BB, PR)
 			if a >= 0 || b >= 0 {
 				cost = TokenCost(a, b)
@@ -82,6 +85,9 @@ func (d AocDay13) Puzzle1(useSample int) {
 				fmt.Println("Btn A: {", BA.x, ",", BA.y, "} | Btn B: {", BB.x, ",", BB.y, "} | Prz {", PR.x, ",", PR.y, "} | Unreachable")
 			}
 			ready = false
+			fmt.Println("")
+			fmt.Println("--------------------------------")
+			fmt.Println("")
 		}
 
 	}
@@ -112,18 +118,15 @@ func Calculate(BA, BB, PR Point) (int, int) {
 	maxb = PR.x / BB.x
 	maxb = min(maxb, PR.y/BB.y)
 
-	// An odd one, but the instructions suggest these should never be more than 100...
-	if maxa > 100 || maxb > 100 {
-		return -1, -1
-	}
-
 	// B presses are cheaper, so start with them maximised and work backwards
 	// But should this be a binary search...?
 	for b = maxb; b >= 0; b-- {
-		for a = 0; a < maxa; a++ {
+		for a = maxb - b; a < maxa; a++ {
 
 			x = BB.x*b + BA.x*a
 			y = BB.y*b + BA.y*a
+
+			// fmt.Println(maxa, ",", maxb, " | ", a, ",", b, " | ", x, ",", y, " | ", PR.x, ",", PR.y)
 
 			if x == PR.x && y == PR.y {
 				cost = TokenCost(a, b)
