@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"regexp"
 	"strconv"
@@ -75,7 +74,6 @@ func (d AocDay13) Puzzle1(useSample int) {
 		}
 
 		if ready {
-			// fmt.Println("Btn A: {", BA.x, ",", BA.y, "} | Btn B: {", BB.x, ",", BB.y, "} | Prz {", PR.x, ",", PR.y, "}")
 			a, b = Calculate(BA, BB, PR)
 			if a >= 0 || b >= 0 {
 				cost = TokenCost(a, b)
@@ -97,55 +95,22 @@ func (d AocDay13) Puzzle1(useSample int) {
 
 }
 
+/*
+ * Credit: ThunderChaser
+ * https://www.reddit.com/r/adventofcode/comments/1hd7irq/2024_day_13_an_explanation_of_the_mathematics/
+ *
+ * Simplified to use Cramer's rule, as illustrated in the post above <3
+ */
 func Calculate(BA, BB, PR Point) (int, int) {
 
-	var (
-		cost       int64
-		maxa, maxb int
-		a, b, x, y int
-	)
+	a := (PR.x*BB.y - PR.y*BB.x) / (BA.x*BB.y - BA.y*BB.x)
+	b := (PR.y*BA.x - PR.x*BA.y) / (BA.x*BB.y - BA.y*BB.x)
 
-	cheapest := int64(math.MaxInt64)
-	chpa, chpb := math.MaxInt, math.MaxInt
-
-	// Find maximum possible presses for each button
-	// Ie the lowest presses that keeps us under (or equal?) to the prize target
-	// By definition if we press more than that, then we'll overshoot...
-
-	maxa = PR.x / BA.x
-	maxa = min(maxa, PR.y/BA.y)
-
-	maxb = PR.x / BB.x
-	maxb = min(maxb, PR.y/BB.y)
-
-	// B presses are cheaper, so start with them maximised and work backwards
-	// But should this be a binary search...?
-	for b = maxb; b >= 0; b-- {
-		for a = maxb - b; a < maxa; a++ {
-
-			x = BB.x*b + BA.x*a
-			y = BB.y*b + BA.y*a
-
-			// fmt.Println(maxa, ",", maxb, " | ", a, ",", b, " | ", x, ",", y, " | ", PR.x, ",", PR.y)
-
-			if x == PR.x && y == PR.y {
-				cost = TokenCost(a, b)
-				if cost < cheapest {
-					chpa, chpb = a, b
-					cheapest = cost
-				}
-			} else if x > PR.x || y > PR.y {
-				break
-			}
-
-		}
-	}
-
-	if chpa > maxa || chpb > maxb {
+	if a*BA.x+b*BB.x != PR.x || a*BA.y+b*BB.y != PR.y {
 		return -1, -1
 	}
 
-	return chpa, chpb
+	return a, b
 
 }
 
