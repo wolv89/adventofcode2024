@@ -310,6 +310,10 @@ func (f *Factory) Run() {
 		clear(f.buf.Value.([][]uint8)[r])
 	}
 
+	/*
+	 * Either start at 72 and increment by 103
+	 * or start at 93 and increment by 101
+	 */
 	for r := range f.robots {
 		f.robots[r].WalkS(f.w, f.h, 1)
 		f.buf.Value.([][]uint8)[f.robots[r].posy][f.robots[r].posx]++

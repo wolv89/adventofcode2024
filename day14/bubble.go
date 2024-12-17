@@ -27,7 +27,7 @@ type updateMsg struct{}
 func listenForUpdate(sub chan struct{}, factory *Factory) tea.Cmd {
 	return func() tea.Msg {
 		for {
-			time.Sleep(time.Millisecond * 25)
+			time.Sleep(time.Millisecond * 500)
 			factory.Run()
 			sub <- struct{}{}
 		}
@@ -59,7 +59,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		return m, tea.Quit
 	case updateMsg:
-		m.secs++
+		m.secs += 1
 		m.cyc = (m.cyc + 1) % TRAIL
 		return m, waitForUpdate(m.sub)
 	default:
