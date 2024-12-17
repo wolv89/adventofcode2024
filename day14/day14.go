@@ -288,6 +288,7 @@ func (d AocDay14) Puzzle2(start int) {
 		secs:    start,
 		w:       w,
 		h:       h,
+		cyc:     0,
 		data:    seq,
 		factory: &factory,
 	})
@@ -304,8 +305,6 @@ func (f *Factory) Run() {
 	f.buf = f.buf.Next()
 
 	var r int
-
-	// clear(f.buf.Value.([][]uint8))
 
 	for r = range f.buf.Value.([][]uint8) {
 		clear(f.buf.Value.([][]uint8)[r])

@@ -2,6 +2,7 @@ package day14
 
 import (
 	"container/ring"
+	"fmt"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -14,10 +15,11 @@ import (
  */
 
 var (
-	treeStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#16df16"))
-	trailStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#327b32"))
-	fadeStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#283b28"))
-	dotStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#808380"))
+	baubleStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#e73007"))
+	treeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#16df16"))
+	trailStyle  = lipgloss.NewStyle().Foreground(lipgloss.Color("#327b32"))
+	fadeStyle   = lipgloss.NewStyle().Foreground(lipgloss.Color("#283b28"))
+	dotStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("#808380"))
 )
 
 type updateMsg struct{}
@@ -25,7 +27,7 @@ type updateMsg struct{}
 func listenForUpdate(sub chan struct{}, factory *Factory) tea.Cmd {
 	return func() tea.Msg {
 		for {
-			time.Sleep(time.Millisecond * 100)
+			time.Sleep(time.Millisecond * 25)
 			factory.Run()
 			sub <- struct{}{}
 		}
@@ -39,10 +41,10 @@ func waitForUpdate(sub chan struct{}) tea.Cmd {
 }
 
 type model struct {
-	sub        chan struct{}
-	secs, w, h int
-	data       *ring.Ring
-	factory    *Factory
+	sub             chan struct{}
+	secs, w, h, cyc int
+	data            *ring.Ring
+	factory         *Factory
 }
 
 func (m model) Init() tea.Cmd {
@@ -58,6 +60,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	case updateMsg:
 		m.secs++
+		m.cyc = (m.cyc + 1) % TRAIL
 		return m, waitForUpdate(m.sub)
 	default:
 		return m, nil
@@ -72,33 +75,33 @@ func (m model) View() string {
 	)
 
 	refs := make([][][]uint8, TRAIL)
-
-	pt := m.data
+	cyc := make([]int, TRAIL)
 
 	for x = 0; x < TRAIL; x++ {
-		refs[x] = pt.Value.([][]uint8)
-		pt = pt.Prev()
+		refs[x] = m.data.Value.([][]uint8)
+		m.data = m.data.Next()
+		cyc[x] = (m.cyc + x) % TRAIL
 	}
 
 	for y = 0; y < m.h; y++ {
 		for x = 0; x < m.w; x++ {
-			if refs[0][y][x] > 0 {
-				if refs[0][y][x] > 9 {
-					s += treeStyle.Render("@")
+			if refs[cyc[0]][y][x] > 0 {
+				if refs[cyc[0]][y][x] > 1 {
+					s += baubleStyle.Render("@")
 				} else {
-					s += treeStyle.Render(string('0' + refs[0][y][x]))
+					s += treeStyle.Render(string('0' + refs[cyc[0]][y][x]))
 				}
-			} else if refs[1][y][x] > 0 {
-				if refs[1][y][x] > 9 {
+			} else if refs[cyc[1]][y][x] > 0 {
+				if refs[cyc[1]][y][x] > 1 {
 					s += trailStyle.Render("@")
 				} else {
-					s += trailStyle.Render(string('0' + refs[1][y][x]))
+					s += trailStyle.Render(string('0' + refs[cyc[1]][y][x]))
 				}
-			} else if refs[2][y][x] > 0 {
-				if refs[2][y][x] > 9 {
+			} else if refs[cyc[2]][y][x] > 0 {
+				if refs[cyc[2]][y][x] > 1 {
 					s += fadeStyle.Render("@")
 				} else {
-					s += fadeStyle.Render(string('0' + refs[2][y][x]))
+					s += fadeStyle.Render(string('0' + refs[cyc[2]][y][x]))
 				}
 			} else {
 				s += dotStyle.Render(".")
@@ -106,6 +109,9 @@ func (m model) View() string {
 		}
 		s += "\n"
 	}
+
+	s += "\n"
+	s += fmt.Sprintln(m.secs)
 
 	return s
 
