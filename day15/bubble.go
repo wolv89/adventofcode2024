@@ -201,7 +201,7 @@ func (m *model) Sum() {
 
 	for y = 1; y < m.h-1; y++ {
 		for x = 1; x < m.w-1; x++ {
-			if m.warehouse[y][x] == BOX {
+			if m.warehouse[y][x] == BOXLEFT {
 				sum += 100*y + x
 			}
 		}
