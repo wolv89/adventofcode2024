@@ -11,6 +11,7 @@ type Program struct {
 	Instructions []int
 	Register     [3]int64
 	Ptr          int
+	WithChecks   bool
 }
 
 const (
@@ -18,6 +19,16 @@ const (
 	B = 1
 	C = 2
 )
+
+func (p *Program) Reset(rega int64) {
+
+	p.Register[A] = rega
+	p.Register[B] = 0
+	p.Register[C] = 0
+	p.Ptr = 0
+	p.Output = make([]int64, 0)
+
+}
 
 func (p *Program) Adv(operand int) {
 
@@ -54,9 +65,15 @@ func (p *Program) Bxc(operand int) {
 
 }
 
-func (p *Program) Out(operand int) {
+func (p *Program) Out(operand int) int {
 
 	p.Output = append(p.Output, p.ComboOperand(operand)%8)
+
+	if !p.WithChecks {
+		return 0
+	}
+
+	return p.Check()
 
 }
 
@@ -72,13 +89,13 @@ func (p *Program) Cdv(operand int) {
 
 }
 
-func (p *Program) Run() {
+func (p *Program) Run() bool {
 
 	n := len(p.Instructions)
 
 	var (
-		op     int
-		jumped bool
+		op, chk int
+		jumped  bool
 	)
 
 	for p.Ptr < n-1 {
@@ -98,11 +115,19 @@ func (p *Program) Run() {
 		case 4:
 			p.Bxc(p.Instructions[op])
 		case 5:
-			p.Out(p.Instructions[op])
+			chk = p.Out(p.Instructions[op])
 		case 6:
 			p.Bdv(p.Instructions[op])
 		case 7:
 			p.Cdv(p.Instructions[op])
+		}
+
+		if p.WithChecks {
+			if chk < 0 {
+				return false
+			} else if chk > 0 {
+				return true
+			}
 		}
 
 		if !jumped {
@@ -110,6 +135,8 @@ func (p *Program) Run() {
 		}
 
 	}
+
+	return false
 
 }
 
@@ -133,6 +160,26 @@ func (p Program) Render() string {
 	}
 
 	return b.String()
+
+}
+
+func (p Program) Check() int {
+
+	in, on := len(p.Instructions), len(p.Output)
+	var i int
+
+	for i = 0; i < in && i < on; i++ {
+		if int64(p.Instructions[i]) != p.Output[i] {
+			return -1
+		}
+	}
+
+	// Partial match
+	if i != in {
+		return 0
+	}
+
+	return 1
 
 }
 
