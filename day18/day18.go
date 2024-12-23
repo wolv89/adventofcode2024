@@ -97,7 +97,7 @@ func (d AocDay18) Puzzle1(useSample int) {
 
 	fmt.Println("")
 
-	for p, _ := range path {
+	for p := range path {
 		grid[p.y][p.x] = 'O'
 	}
 
@@ -116,6 +116,103 @@ func (d AocDay18) Puzzle1(useSample int) {
 }
 
 func (d AocDay18) Puzzle2(useSample int) {
+
+	datafile := DIR + "data.txt"
+	if useSample == 1 {
+		datafile = DIR + "sample.txt"
+		SIZE = 6
+		BYTES = 12
+	}
+
+	f, err := os.Open(datafile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	var (
+		coords     []string
+		line       string
+		l, g, x, y int
+	)
+
+	grid := make([][]byte, SIZE+1)
+	for g = range grid {
+		grid[g] = bytes.Repeat([]byte("."), SIZE+1)
+	}
+
+	falling := make([]Point, 0)
+
+	for scanner.Scan() {
+
+		line = scanner.Text()
+
+		coords = strings.Split(line, ",")
+		if len(coords) < 2 {
+			fmt.Println("PROBLEM splitting line: ", line)
+			continue
+		}
+
+		x, y = NumToInt(coords[0]), NumToInt(coords[1])
+
+		if x < 0 || y < 0 {
+			fmt.Println("PROBLEM parsing line: ", line)
+			continue
+		}
+
+		if l < BYTES {
+			grid[y][x] = '#'
+		} else {
+			falling = append(falling, Point{x, y})
+		}
+
+		l++
+
+	}
+
+	var (
+		maze                    [][]byte
+		hit                     Point
+		left, right, mid, score int
+	)
+
+	right = len(falling) - 1
+
+	for left <= right {
+
+		mid = left + (right-left)/2
+
+		maze = make([][]byte, SIZE+1)
+		for g = range maze {
+			maze[g] = make([]byte, SIZE+1)
+			copy(maze[g], grid[g])
+		}
+
+		for _, hit = range falling[:mid+1] {
+			maze[hit.y][hit.x] = '#'
+		}
+
+		score, _ = dijkstras(maze)
+
+		if score < 0 {
+			right = mid - 1
+		} else {
+			left = mid + 1
+		}
+
+	}
+
+	fmt.Println("")
+	for g = range maze {
+		fmt.Println(string(maze[g]))
+	}
+	fmt.Println("")
+
+	fmt.Println(left, right, mid)
+	fmt.Println(falling[mid])
 
 }
 
