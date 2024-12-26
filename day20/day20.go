@@ -15,8 +15,9 @@ type AocDay20 struct{}
 const DIR = "day20/"
 
 const (
-	STARTCHAR = 'S'
-	ENDCHAR   = 'E'
+	STARTCHAR  = 'S'
+	ENDCHAR    = 'E'
+	CHEATLIMIT = 20
 )
 
 type Point struct {
@@ -378,4 +379,136 @@ func (d AocDay20) Puzzle1Sample(useSample int) {
 
 func (d AocDay20) Puzzle2(useSample int) {
 
+	datafile := DIR + "data.txt"
+	if useSample == 1 {
+		datafile = DIR + "sample.txt"
+	}
+
+	f, err := os.Open(datafile)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	scanner.Split(bufio.ScanLines)
+
+	var (
+		start, loc, next Point
+		line             string
+		w, h, dr, step   int
+		foundStart       bool
+	)
+
+	path := make([][]byte, 0)
+	seq := make([]Point, 0)
+
+	for scanner.Scan() {
+
+		line = scanner.Text()
+
+		path = append(path, []byte(line))
+
+		if !foundStart {
+			for w = 0; w < len(line); w++ {
+				if line[w] == STARTCHAR {
+					start = Point{w, h}
+					foundStart = true
+				}
+			}
+			h++
+		}
+
+	}
+
+	w, h = len(path[0]), len(path)
+	loc = Point{start.x, start.y}
+	next = Point{0, 0}
+
+	dist := make([][]int, h)
+	vis := make([][]bool, h)
+
+	for dr = range dist {
+		dist[dr] = make([]int, w)
+		vis[dr] = make([]bool, w)
+	}
+
+	seq = append(seq, loc)
+
+	// --- CYCLE 1: Count steps to exit ---
+	for {
+
+		for dr = range DIRS {
+
+			next.x, next.y = loc.x+DIRS[dr][0], loc.y+DIRS[dr][1]
+
+			if next.x < 0 || next.y < 0 || next.x >= w || next.y >= h || vis[next.y][next.x] || path[next.y][next.x] == '#' {
+				continue
+			} else {
+				break
+			}
+
+		}
+
+		vis[loc.y][loc.x] = true
+
+		step++
+		loc.x, loc.y = next.x, next.y
+		dist[loc.y][loc.x] = step
+
+		seq = append(seq, loc)
+
+		if path[loc.y][loc.x] == ENDCHAR {
+			break
+		}
+
+	}
+
+	var (
+		a, b, save, superDuperCheats int
+		actualDist, cheatDist        int
+	)
+
+	sn := len(seq)
+
+	for a = 0; a < sn; a++ {
+		for b = a + 1; b < sn; b++ {
+
+			cheatDist = DistBetween(seq[a], seq[b])
+			if cheatDist > CHEATLIMIT {
+				continue
+			}
+
+			actualDist = dist[seq[b].y][seq[b].x] - dist[seq[a].y][seq[a].x]
+			if actualDist <= cheatDist {
+				continue
+			}
+
+			save = actualDist - cheatDist
+			if save < 100 {
+				continue
+			}
+
+			superDuperCheats++
+
+		}
+	}
+
+	fmt.Println("")
+	fmt.Println("SUPER DUPER CHEATS")
+	fmt.Println("------------")
+	fmt.Println("(Save 100 or more picoseconds)")
+	fmt.Println(">", superDuperCheats)
+
+}
+
+func DistBetween(p1, p2 Point) int {
+	return abs(p2.x-p1.x) + abs(p2.y-p1.y)
+}
+
+func abs(x int) int {
+	if x < 0 {
+		return x * -1
+	}
+	return x
 }
