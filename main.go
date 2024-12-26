@@ -25,6 +25,7 @@ import (
 	"github.com/wolv89/adventofcode2024/day18"
 	"github.com/wolv89/adventofcode2024/day19"
 	"github.com/wolv89/adventofcode2024/day20"
+	"github.com/wolv89/adventofcode2024/day21"
 )
 
 var (
@@ -84,6 +85,7 @@ func main() {
 		day18.AocDay18{},
 		day19.AocDay19{},
 		day20.AocDay20{},
+		day21.AocDay21{},
 	}
 
 	flag.Parse()
