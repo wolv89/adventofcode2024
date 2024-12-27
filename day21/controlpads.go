@@ -3,7 +3,7 @@ package day21
 /*
 
 
-
+ * (Part 1)
  * CREDIT: AbbreviationsHuman60
  * https://www.reddit.com/r/adventofcode/comments/1hj2odw/comment/m34pm7v/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button
  *
