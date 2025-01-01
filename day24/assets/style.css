@@ -1,0 +1,126 @@
+html,
+body,
+* {
+    padding: 0;
+    margin: 0;
+}
+
+:root {
+    --background: #0f0f23;
+}
+
+html {
+    font-size: 12px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: var(--background);
+    color: #ccc;
+}
+
+.gates {
+    position: relative;
+    z-index: 2024;
+}
+
+.gates-group {
+    padding: 5rem 2.5rem;
+    display: flex;
+    justify-content: space-around;
+    gap: 1em;
+}
+
+.gate {
+    padding: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid #fff;
+}
+
+.rules {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1012;
+}
+
+.rule {
+    position: absolute;
+}
+
+.connection-top {
+    position: absolute;
+    top: 0px;
+}
+
+.connection-top:before,
+.connection-top:after {
+    position: absolute;
+    content: '';
+    height: 50%;
+}
+
+.connection-top:before {
+    width: 100%;
+    left: 0;
+    top: 0;
+    border: 1px dashed #fff;
+    border-top: 0;
+}
+
+.connection-top:after {
+    width: 50%;
+    left: 50%;
+    bottom: 0;
+    border-left: 1px dashed #fff;
+}
+
+.connection-bottom {
+    position: absolute;
+    bottom: 0px;
+}
+
+.connection-bottom:before,
+.connection-bottom:after {
+    position: absolute;
+    content: '';
+    height: 50%;
+    width: 100%;
+    left: 0;
+}
+
+.connection-bottom:before {
+    border-bottom: 1px dashed #fff;
+}
+
+.connection-bottom:after {
+    top: 50%;
+}
+
+.connection-bottom.right-side:before,
+.connection-bottom.left-side:after {
+    border-left: 1px dashed #fff;
+}
+
+.connection-bottom.left-side:before,
+.connection-bottom.right-side:after {
+    border-right: 1px dashed #fff;
+}
+
+.connection-type {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1.5rem;
+    text-align: center;
+    font-size: 1.25rem;
+    line-height: 3rem;
+    position: absolute;
+    color: var(--background);
+    background: #fff;
+    font-weight: bold;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%) translateY(50%);
+}

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8" />
+    <title>Day 24 &bull; Advent of Code 2024</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <link rel="stylesheet" type="text/css" href="assets/style.css" />
+    <script type="text/javascript">var _RULES = {{ .Rules }}</script>
+    <script defer type="text/javascript" src="assets/script.js"></script>
+</head>
+
+<body>
+
+    <div class="gates" id="gates">
+        {{ range .GateMap }}
+        <section class="gates-group">
+            {{ range . }}
+            <article class="gate" id="gate-{{.}}">{{ . }}</article>
+            {{ end }}
+        </section>
+        {{ end }}
+    </div>
+
+    <div class="rules" id="rules">
+    </div>
+
+</body>
+
+</html>
