@@ -4,9 +4,8 @@ import (
 	"bufio"
 	"container/list"
 	"fmt"
-	"html/template"
 	"log"
-	"net/http"
+	"math/bits"
 	"os"
 	"slices"
 	"strconv"
@@ -19,6 +18,7 @@ type AocDay24 struct{}
 
 const DIR = "day24/"
 
+// Evidently I have used the wrong names for these
 type Gate struct {
 	Val, Set bool
 }
@@ -292,9 +292,16 @@ func (d AocDay24) Puzzle1(useSample int) {
 
 }
 
+type Adder struct {
+	gates     []Rule
+	registers treemap.Map
+}
+
 /*
- * In my head I was going to have this nice layout that I could see and identify clear problems
- * But in reality its just spaghetti, so I'll have to shift to some other approach
+ * CREDIT: LxsterGames
+ * https://www.reddit.com/r/adventofcode/comments/1hla5ql/2024_day_24_part_2_a_guide_on_the_idea_behind_the/
+ *
+ * Thanks to this great write-up and Kotlin solution, roughly adapted to Go below...
  */
 func (d AocDay24) Puzzle2(useSample int) {
 
@@ -315,28 +322,22 @@ func (d AocDay24) Puzzle2(useSample int) {
 	scanner.Split(bufio.ScanLines)
 
 	var (
-		parts            []string
-		line             string
-		zgates           int
-		op               byte
-		readingRules, ok bool
+		parts        []string
+		line         string
+		op           byte
+		readingRules bool
 	)
 
-	gates := treemap.NewWithStringComparator()
-	rules := list.New()
-	allRules := make([]Rule, 0)
-
-	gatemap := make([][]string, 0)
-	col := make([]string, 0)
-
-	logged := make(map[string]struct{})
+	adder := Adder{
+		make([]Rule, 0),
+		*treemap.NewWithStringComparator(),
+	}
 
 	for scanner.Scan() {
 
 		line = scanner.Text()
 
 		if len(line) == 0 {
-			gatemap = append(gatemap, col)
 			readingRules = true
 			continue
 		}
@@ -350,16 +351,7 @@ func (d AocDay24) Puzzle2(useSample int) {
 				continue
 			}
 
-			gate := Gate{parts[1] == "1", true}
-			gates.Put(parts[0], gate)
-
-			// Should probably have stored parts[0] in a var like gatename, etc...
-			if parts[0][0] == 'z' {
-				zgates++
-			} else if parts[0][0] == 'x' || parts[0][0] == 'y' {
-				col = append(col, parts[0])
-				logged[parts[0]] = struct{}{}
-			}
+			adder.registers.Put(parts[0], parts[1] == "1")
 
 		} else {
 			// Read rules
@@ -368,28 +360,6 @@ func (d AocDay24) Puzzle2(useSample int) {
 			if len(parts) < 5 {
 				fmt.Println("Error parsing line: ", line)
 				continue
-			}
-
-			// Add all gates mentioned in this rule to the gate map, with no initial value
-			if _, ok = gates.Get(parts[0]); !ok {
-				gates.Put(parts[0], Gate{false, false})
-				if parts[0][0] == 'z' {
-					zgates++
-				}
-			}
-
-			if _, ok = gates.Get(parts[2]); !ok {
-				gates.Put(parts[2], Gate{false, false})
-				if parts[2][0] == 'z' {
-					zgates++
-				}
-			}
-
-			if _, ok = gates.Get(parts[4]); !ok {
-				gates.Put(parts[4], Gate{false, false})
-				if parts[4][0] == 'z' {
-					zgates++
-				}
 			}
 
 			switch parts[1] {
@@ -409,23 +379,205 @@ func (d AocDay24) Puzzle2(useSample int) {
 				Op:   op,
 			}
 
-			rules.PushBack(rule)
-			allRules = append(allRules, rule)
+			// Oh boy...
+			adder.gates = append(adder.gates, rule)
 
 		}
 
 	}
 
+	swappedGates := adder.swapGates()
+
+	xval := adder.getWiresVal('x')
+	yval := adder.getWiresVal('y')
+
+	zval := adder.Add()
+
+	res := (xval + yval) ^ zval
+
+	fmt.Println("X:   ", xval)
+	fmt.Println("Y: + ", yval)
+	fmt.Println("Z: = ", zval)
+	fmt.Println("---")
+	fmt.Println("xor ", res)
+	fmt.Printf("%b\n", res)
+	fmt.Println("---")
+
+	tail := fmt.Sprintf("%02d", bits.TrailingZeros64(uint64(res)))
+	extraGates := adder.findGatesEndingWith(tail)
+
+	var g int
+
+	finalNames := make([]string, 0, len(swappedGates)+len(extraGates))
+
+	for _, g = range swappedGates {
+		finalNames = append(finalNames, adder.gates[g].Out)
+	}
+
+	for _, g = range extraGates {
+		finalNames = append(finalNames, adder.gates[g].Out)
+	}
+
+	slices.Sort(finalNames)
+
+	fmt.Println(strings.Join(finalNames, ","))
+
+}
+
+func (a *Adder) swapGates() []int {
+
+	filter1, filter2 := make([]int, 0), make([]int, 0)
+
 	var (
-		rl         Rule
-		last       *list.Element
-		gname      string
-		deleteLast bool
+		gate             Rule
+		g, h, swap, comp int
 	)
 
-	for zgates > 0 {
+	for g, gate = range a.gates {
 
-		col := make([]string, 0)
+		if gate.Out[0] == 'z' && gate.Out != "z45" && gate.Op != OP_XOR {
+			filter1 = append(filter1, g)
+		}
+
+		if (gate.Inp1[0] != 'x' && gate.Inp1[0] != 'y') && (gate.Inp2[0] != 'x' && gate.Inp2[0] != 'y') && gate.Out[0] != 'z' && gate.Op == OP_XOR {
+			filter2 = append(filter2, g)
+		}
+
+	}
+
+	for _, g = range filter2 {
+		comp = a.findZGateUsing(g)
+		for _, h = range filter1 {
+			if h == comp {
+				swap = h
+			}
+		}
+		a.gates[g].Out, a.gates[swap].Out = a.gates[swap].Out, a.gates[g].Out
+	}
+
+	filter1 = append(filter1, filter2...)
+	return filter1
+
+}
+
+func (a Adder) findGatesEndingWith(tail string) []int {
+
+	found := make([]int, 0)
+
+	for h, gate := range a.gates {
+		if strings.HasSuffix(gate.Inp1, tail) && strings.HasSuffix(gate.Inp2, tail) {
+			found = append(found, h)
+		}
+	}
+
+	return found
+
+}
+
+func (a Adder) findZGateUsing(g int) int {
+
+	filter := make([]int, 0)
+
+	c := a.gates[g].Out
+
+	for h, gate := range a.gates {
+		if gate.Inp1 == c || gate.Inp2 == c {
+			filter = append(filter, h)
+		}
+	}
+
+	if len(filter) == 0 {
+		return -1
+	}
+
+	for _, fl := range filter {
+		if a.gates[fl].Out[0] == 'z' {
+			return a.findZGatePrevious(a.gates[fl].Out)
+		}
+	}
+
+	return a.findZGateUsing(filter[0])
+
+}
+
+func (a Adder) findZGatePrevious(name string) int {
+
+	x, err := strconv.Atoi(name[1:])
+	if err != nil {
+		log.Fatal("Uh oh: ", err)
+	}
+
+	search := fmt.Sprintf("z%02d", x-1)
+
+	for g := range a.gates {
+		if a.gates[g].Out == search {
+			return g
+		}
+	}
+
+	return -1
+
+}
+
+func (a Adder) getWiresVal(c byte) int64 {
+
+	var b strings.Builder
+
+	a.registers.Each(func(key, value interface{}) {
+
+		name := key.(string)
+		val := value.(bool)
+
+		if name[0] == c {
+			if val {
+				b.WriteByte('1')
+			} else {
+				b.WriteByte('0')
+			}
+		}
+
+	})
+
+	num := b.String()
+
+	b.Reset()
+	b.Grow(len(num))
+
+	for i := len(num) - 1; i >= 0; i-- {
+		b.WriteByte(num[i])
+	}
+
+	num = b.String()
+
+	x, err := strconv.ParseInt(num, 2, 64)
+	if err != nil {
+		log.Fatal("Oh sh*t: ", err)
+	}
+
+	return x
+
+}
+
+func (a *Adder) Add() int64 {
+
+	rules := list.New()
+
+	var (
+		rl                           Rule
+		g1i, g2i                     interface{}
+		last                         *list.Element
+		zgates                       int
+		deleteLast, ok, g1, g2, gout bool
+	)
+
+	for _, rl = range a.gates {
+		rules.PushBack(rl)
+		if rl.Out[0] == 'z' {
+			zgates++
+		}
+	}
+
+	for zgates > 0 {
 
 		for r := rules.Front(); r != nil; r = r.Next() {
 
@@ -438,15 +590,33 @@ func (d AocDay24) Puzzle2(useSample int) {
 
 			rl = r.Value.(Rule)
 
-			if _, ok = logged[rl.Inp1]; !ok {
+			if _, ok = a.registers.Get(rl.Inp1); !ok {
 				continue
 			}
 
-			if _, ok = logged[rl.Inp2]; !ok {
+			if _, ok = a.registers.Get(rl.Inp2); !ok {
 				continue
 			}
 
-			col = append(col, rl.Out)
+			g1i, _ = a.registers.Get(rl.Inp1)
+			g2i, _ = a.registers.Get(rl.Inp2)
+
+			g1, g2 = g1i.(bool), g2i.(bool)
+
+			switch rl.Op {
+			case OP_AND:
+				gout = g1 && g2
+			case OP_OR:
+				gout = g1 || g2
+			case OP_XOR:
+				if (g1 || g2) && (g1 != g2) {
+					gout = true
+				} else {
+					gout = false
+				}
+			}
+
+			a.registers.Put(rl.Out, gout)
 
 			if rl.Out[0] == 'z' {
 				zgates--
@@ -456,43 +626,12 @@ func (d AocDay24) Puzzle2(useSample int) {
 
 		}
 
-		if len(col) > 0 {
-			for _, gname = range col {
-				logged[gname] = struct{}{}
-			}
-			slices.Sort(col)
-			gatemap = append(gatemap, col)
-		}
-
 		if deleteLast {
 			rules.Remove(last)
 		}
 
 	}
 
-	type Data struct {
-		GateMap [][]string
-		Rules   []Rule
-	}
-
-	tmpl := template.Must(template.ParseFiles(DIR + "layout.html"))
-
-	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir(DIR+"assets/"))))
-
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		dat := Data{
-			gatemap,
-			allRules,
-		}
-		tmpl.Execute(w, dat)
-	})
-
-	fmt.Println("")
-	fmt.Println("Starting web server:")
-	fmt.Println("---")
-	fmt.Println("")
-	fmt.Println("http://localhost:2627")
-
-	http.ListenAndServe(":2627", nil)
+	return a.getWiresVal('z')
 
 }
