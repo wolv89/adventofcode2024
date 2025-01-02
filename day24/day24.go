@@ -292,6 +292,10 @@ func (d AocDay24) Puzzle1(useSample int) {
 
 }
 
+/*
+ * In my head I was going to have this nice layout that I could see and identify clear problems
+ * But in reality its just spaghetti, so I'll have to shift to some other approach
+ */
 func (d AocDay24) Puzzle2(useSample int) {
 
 	datafile := DIR + "data.txt"

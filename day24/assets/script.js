@@ -7,6 +7,8 @@ const _OPS = {
 
 ruleset = document.getElementById('rules')
 
+min_y_used = {}
+
 for (let r in _RULES) {
 
     let rule = _RULES[r]
@@ -31,6 +33,20 @@ for (let r in _RULES) {
     let max_x = Math.max(inp1x, inp2x, outx)
     let min_y = Math.min(inp1y, inp2y, outy)
     let max_y = Math.max(inp1y, inp2y, outy)
+
+    if (min_y in min_y_used) {
+        let next = min_y_used[min_y]
+        if (next <= 0) {
+            next = (next * 2) + 10
+        } else {
+            next *= -1
+        }
+        console.log(min_y, " | ", next)
+        min_y_used[min_y] = next
+        min_y += next
+    } else {
+        min_y_used[min_y] = 0
+    }
 
     // Hashtag DuaLipa
     let newrule = document.createElement('article')
